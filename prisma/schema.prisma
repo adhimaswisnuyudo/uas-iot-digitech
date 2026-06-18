@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Submission {
+  id            String   @id @default(cuid())
+  kelas         String
+  nama          String
+  npm           String   @unique
+  youtubeUrl    String
+  youtubeId     String
+  duration      Int?
+  durationValid Boolean  @default(false)
+  aiStatus      String   @default("pending")
+  aiScore       Int?
+  aiResult      String?
+  aiError       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ApiUsageLog {
+  id           String   @id @default(cuid())
+  service      String
+  operation    String
+  model        String?
+  promptTokens Int?
+  outputTokens Int?
+  totalTokens  Int?
+  success      Boolean  @default(true)
+  errorMessage String?
+  submissionId String?
+  createdAt    DateTime @default(now())
+}
+
+model SubmitAttempt {
+  id        String   @id @default(cuid())
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])
+}
