@@ -472,6 +472,3 @@ npm run build
 
 ---
 
-## Lisensi
-
-Project internal **Digitech University** — Mitra Digital Service.
