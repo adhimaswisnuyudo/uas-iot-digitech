@@ -7,6 +7,7 @@
     "dev": "next dev",
     "prebuild": "node scripts/ensure-npm.js",
     "build": "prisma generate && next build",
+    "prestart": "node scripts/ensure-build.js",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
