@@ -8,6 +8,8 @@ import {
 import { logApiUsage } from "@/lib/usage";
 import { validateAntibot } from "@/lib/antibot";
 import { getSubmitErrorMessage } from "@/lib/submit-errors";
+import { getAppSettings } from "@/lib/app-settings";
+import { runSubmissionAnalysis } from "@/lib/run-submission-analysis";
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,6 +100,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const settings = await getAppSettings();
+    const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+
     const submission = await prisma.submission.create({
       data: {
         kelas,
@@ -107,11 +112,13 @@ export async function POST(request: NextRequest) {
         youtubeId: validation.videoId,
         duration: validation.duration ?? null,
         durationValid: validation.durationValid,
-        aiStatus: process.env.GEMINI_API_KEY
-          ? AI_STATUS.PENDING
-          : AI_STATUS.SKIPPED,
+        aiStatus: hasGemini ? AI_STATUS.PENDING : AI_STATUS.SKIPPED,
       },
     });
+
+    if (hasGemini && settings.autoAnalyzeVideos) {
+      void runSubmissionAnalysis(submission.id);
+    }
 
     return NextResponse.json(
       {

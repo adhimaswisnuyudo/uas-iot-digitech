@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Header } from "@/components/Header";
 import { DurationBadge, StatusBadge } from "@/components/Badge";
 import { ApiUsagePanel } from "@/components/ApiUsagePanel";
+import { AnalysisSettingsPanel } from "@/components/AnalysisSettingsPanel";
 import { FilterBar } from "@/components/FilterBar";
 import { downloadSubmissionsExcel } from "@/lib/export-submissions";
 import { KELAS_OPTIONS } from "@/lib/constants";
@@ -219,6 +220,8 @@ export default function AdminPage() {
                   Lihat Gallery
                 </Link>
               </div>
+
+              <AnalysisSettingsPanel />
 
               <ApiUsagePanel />
 

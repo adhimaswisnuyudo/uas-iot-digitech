@@ -45,3 +45,9 @@ model SubmitAttempt {
 
   @@index([ip, createdAt])
 }
+
+model AppSetting {
+  id                String   @id @default("default")
+  autoAnalyzeVideos Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+}
