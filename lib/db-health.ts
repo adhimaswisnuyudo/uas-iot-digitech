@@ -17,12 +17,26 @@ export async function checkDatabaseHealth() {
     const tables = rows.map((row) => row.name);
     const missing = REQUIRED_TABLES.filter((table) => !tables.includes(table));
 
+    let writeOk = true;
+    let writeError: string | undefined;
+    const testId = `health-${Date.now()}`;
+    try {
+      await prisma.submitAttempt.create({ data: { id: testId, ip: "health-check" } });
+      await prisma.submitAttempt.delete({ where: { id: testId } });
+    } catch (error) {
+      writeOk = false;
+      writeError =
+        error instanceof Error ? error.message : "Gagal menulis via Prisma";
+    }
+
     return {
-      ok: missing.length === 0,
+      ok: missing.length === 0 && writeOk,
       ...diagnostics,
       tables,
       missing,
       dbPath,
+      prismaWriteOk: writeOk,
+      prismaWriteError: writeError,
     };
   } catch (error) {
     return {

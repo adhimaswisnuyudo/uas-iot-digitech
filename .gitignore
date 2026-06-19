@@ -19,6 +19,9 @@ pnpm-lock.yaml
 /.next/
 /out/
 
+# prisma client (generated on postinstall)
+/generated/
+
 # production
 /build
 

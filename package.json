@@ -5,7 +5,7 @@
   "packageManager": "npm@10.9.2",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/ensure-npm.js",
+    "prebuild": "node scripts/ensure-npm.js && node scripts/ensure-prisma-client.js",
     "build": "prisma generate && next build",
     "prestart": "node scripts/ensure-build.js",
     "start": "next start",
@@ -14,6 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:status": "node scripts/db-status.js",
+    "db:test-runtime": "npx tsx scripts/test-runtime-db.ts",
     "db:push": "prisma db push"
   },
   "dependencies": {

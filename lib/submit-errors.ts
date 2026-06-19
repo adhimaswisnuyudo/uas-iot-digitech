@@ -1,8 +1,3 @@
-import {
-  getDatabaseDiagnostics,
-  getSqliteFilePath,
-} from "@/lib/database-url";
-
 function getErrorText(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -13,14 +8,28 @@ function getErrorText(error: unknown): string {
   return "";
 }
 
+function isNativeModuleLoadError(message: string): boolean {
+  const combined = message.toLowerCase();
+  return (
+    combined.includes("could not locate the bindings file") ||
+    combined.includes("node_module_version") ||
+    combined.includes("was compiled against a different node.js version") ||
+    combined.includes("invalid elf header") ||
+    combined.includes("module did not self-register")
+  );
+}
+
 export function getSubmitErrorMessage(error: unknown): string {
   const message = getErrorText(error);
+
+  if (!message) {
+    return "Terjadi kesalahan saat menyimpan data";
+  }
+
   const combined = message.toLowerCase();
-  const dbPath = getSqliteFilePath();
-  const diagnostics = getDatabaseDiagnostics();
 
   if (combined.includes("no such table")) {
-    return `Database belum siap di ${dbPath}. Admin: cd ${diagnostics.projectRoot} && npm run db:deploy && npm run db:status`;
+    return "Database belum dimigrasi. Admin server: npm run db:deploy";
   }
 
   if (
@@ -28,7 +37,7 @@ export function getSubmitErrorMessage(error: unknown): string {
     combined.includes("read-only") ||
     combined.includes("sqlite_readonly")
   ) {
-    return `Database tidak bisa ditulis (${dbPath}). Admin: chown -R www:www prisma && chmod 775 prisma && chmod 664 prisma/dev.db`;
+    return "Database tidak bisa ditulis. Admin server: chown -R www:www prisma && chmod 664 prisma/dev.db";
   }
 
   if (
@@ -37,21 +46,13 @@ export function getSubmitErrorMessage(error: unknown): string {
     combined.includes("eacces") ||
     combined.includes("permission denied")
   ) {
-    return `Database tidak bisa diakses (${dbPath}). Admin: chown -R www:www prisma && chmod 775 prisma && chmod 664 prisma/dev.db`;
+    return "Database tidak bisa diakses. Admin server: periksa permission folder prisma/";
   }
 
-  if (
-    combined.includes("better_sqlite3") ||
-    combined.includes("better-sqlite3") ||
-    combined.includes("invalid or unexpected token") ||
-    combined.includes("was compiled against a different node.js version")
-  ) {
-    return "Modul database gagal dimuat. Admin server: rm -rf node_modules && npm ci";
+  if (isNativeModuleLoadError(message)) {
+    return "Modul database native gagal dimuat. Admin server: npm rebuild better-sqlite3 && pm2 restart uasdigitech";
   }
 
-  if (process.env.NODE_ENV !== "production" && message) {
-    return message;
-  }
-
-  return "Terjadi kesalahan saat menyimpan data";
+  const preview = message.replace(/\s+/g, " ").slice(0, 180);
+  return `Terjadi kesalahan saat menyimpan data: ${preview}`;
 }
