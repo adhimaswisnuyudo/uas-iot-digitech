@@ -14,7 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:status": "node scripts/db-status.js",
-    "db:test-runtime": "npx tsx scripts/test-runtime-db.ts",
+    "db:test-runtime": "tsx scripts/test-runtime-db.ts",
     "db:push": "prisma db push"
   },
   "dependencies": {
@@ -38,6 +38,7 @@
     "eslint-config-next": "16.2.9",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }
