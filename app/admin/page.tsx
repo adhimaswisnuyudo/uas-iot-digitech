@@ -43,6 +43,15 @@ export default function AdminPage() {
     }
   }, [fetchSubmissions]);
 
+  function handleLogout() {
+    sessionStorage.removeItem("admin_token");
+    setPassword("");
+    setAuthenticated(false);
+    setSubmissions([]);
+    setFilterKelas("");
+    setSearch("");
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -219,6 +228,13 @@ export default function AdminPage() {
                 >
                   Lihat Gallery
                 </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Keluar
+                </button>
               </div>
 
               <AnalysisSettingsPanel />

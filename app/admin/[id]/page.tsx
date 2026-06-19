@@ -98,6 +98,11 @@ export default function AdminDetailPage() {
     }
   }
 
+  function handleLogout() {
+    sessionStorage.removeItem("admin_token");
+    router.replace("/admin");
+  }
+
   return (
     <>
       <Header />
@@ -119,6 +124,14 @@ export default function AdminDetailPage() {
                 Hasil analisis Gemini secara keseluruhan
               </p>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Keluar
+              </button>
             {submission && (
               <div className="flex flex-wrap gap-2">
                 <button
@@ -147,6 +160,7 @@ export default function AdminDetailPage() {
                 </button>
               </div>
             )}
+            </div>
           </div>
 
           {loading ? (
