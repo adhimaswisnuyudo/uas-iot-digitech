@@ -3,24 +3,32 @@ import {
   getSqliteFilePath,
 } from "@/lib/database-url";
 
-export function getSubmitErrorMessage(error: unknown): string {
-  const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "";
+function getErrorText(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return "";
+}
 
+export function getSubmitErrorMessage(error: unknown): string {
+  const message = getErrorText(error);
   const combined = message.toLowerCase();
   const dbPath = getSqliteFilePath();
   const diagnostics = getDatabaseDiagnostics();
 
-  if (
-    combined.includes("no such table") ||
-    combined.includes("submitattempt") ||
-    combined.includes("apiusagelog")
-  ) {
+  if (combined.includes("no such table")) {
     return `Database belum siap di ${dbPath}. Admin: cd ${diagnostics.projectRoot} && npm run db:deploy && npm run db:status`;
+  }
+
+  if (
+    combined.includes("readonly") ||
+    combined.includes("read-only") ||
+    combined.includes("sqlite_readonly")
+  ) {
+    return `Database tidak bisa ditulis (${dbPath}). Admin: chown -R www:www prisma && chmod 775 prisma && chmod 664 prisma/dev.db`;
   }
 
   if (
@@ -29,7 +37,7 @@ export function getSubmitErrorMessage(error: unknown): string {
     combined.includes("eacces") ||
     combined.includes("permission denied")
   ) {
-    return "Database tidak bisa ditulis. Admin server: chmod 755 prisma && chmod 664 prisma/dev.db";
+    return `Database tidak bisa diakses (${dbPath}). Admin: chown -R www:www prisma && chmod 775 prisma && chmod 664 prisma/dev.db`;
   }
 
   if (

@@ -16,6 +16,8 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+if (!globalForPrisma.prisma) {
+  console.info(`[db] Using SQLite at ${connectionString}`);
 }
+
+globalForPrisma.prisma = prisma;

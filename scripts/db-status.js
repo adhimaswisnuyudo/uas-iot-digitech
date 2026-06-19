@@ -97,5 +97,31 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log("\nOK — database siap.");
 db.close();
+
+const dbWrite = new Database(diagnostics.resolvedDatabasePath);
+try {
+  const testId = `db-status-${Date.now()}`;
+  dbWrite
+    .prepare("INSERT INTO SubmitAttempt (id, ip) VALUES (?, ?)")
+    .run(testId, "db-status-test");
+  dbWrite.prepare("DELETE FROM SubmitAttempt WHERE id = ?").run(testId);
+  console.log("\nWrite test: OK");
+} catch (error) {
+  console.error(
+    "\nWrite test GAGAL:",
+    error instanceof Error ? error.message : error,
+  );
+  console.error(
+    "\nDatabase bisa dibaca tapi tidak bisa ditulis (PM2 user ≠ owner file).",
+  );
+  console.error("Perbaiki permission (sesuaikan user PM2, biasanya www):");
+  console.error(`  chown -R www:www ${path.dirname(diagnostics.resolvedDatabasePath)}`);
+  console.error(`  chmod 775 ${path.dirname(diagnostics.resolvedDatabasePath)}`);
+  console.error(`  chmod 664 ${diagnostics.resolvedDatabasePath}`);
+  process.exit(1);
+} finally {
+  dbWrite.close();
+}
+
+console.log("\nOK — database siap.");
