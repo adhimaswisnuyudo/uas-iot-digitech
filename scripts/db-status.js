@@ -4,45 +4,29 @@ require("dotenv/config");
 
 const fs = require("fs");
 const path = require("path");
-const Database = require("better-sqlite3");
+const { createClient } = require("@libsql/client");
 
 const DEFAULT_DATABASE_URL = "file:./prisma/dev.db";
-
-function getModuleDirectory() {
-  return __dirname;
-}
-
-function findProjectRootFrom(startDir) {
-  let dir = path.resolve(startDir);
-
-  while (true) {
-    const hasPackage = fs.existsSync(path.join(dir, "package.json"));
-    const hasPrisma = fs.existsSync(path.join(dir, "prisma", "schema.prisma"));
-    if (hasPackage && hasPrisma) {
-      return dir;
-    }
-
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      return null;
-    }
-    dir = parent;
-  }
-}
 
 function getProjectRoot() {
   if (process.env.PROJECT_ROOT) {
     return path.resolve(process.env.PROJECT_ROOT);
   }
 
-  for (const start of [process.cwd(), getModuleDirectory()]) {
-    const root = findProjectRootFrom(start);
-    if (root) {
-      return root;
+  let dir = process.cwd();
+  while (true) {
+    if (
+      fs.existsSync(path.join(dir, "package.json")) &&
+      fs.existsSync(path.join(dir, "prisma", "schema.prisma"))
+    ) {
+      return dir;
     }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return process.cwd();
+    }
+    dir = parent;
   }
-
-  return process.cwd();
 }
 
 function resolveSqliteDatabaseUrl(rawUrl = process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL) {
@@ -58,70 +42,72 @@ function resolveSqliteDatabaseUrl(rawUrl = process.env.DATABASE_URL ?? DEFAULT_D
   return `file:${resolved}`;
 }
 
-function getSqliteFilePath() {
-  return resolveSqliteDatabaseUrl().replace(/^file:/, "");
-}
-
 const REQUIRED_TABLES = ["Submission", "SubmitAttempt", "ApiUsageLog"];
 
-const diagnostics = {
-  projectRoot: getProjectRoot(),
-  cwd: process.cwd(),
-  databaseUrlEnv: process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL,
-  resolvedDatabasePath: getSqliteFilePath(),
-  databaseExists: fs.existsSync(getSqliteFilePath()),
-};
+async function main() {
+  const url = resolveSqliteDatabaseUrl();
+  const dbPath = url.replace(/^file:/, "");
+  const diagnostics = {
+    projectRoot: getProjectRoot(),
+    cwd: process.cwd(),
+    databaseUrlEnv: process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL,
+    resolvedDatabasePath: dbPath,
+    databaseExists: fs.existsSync(dbPath),
+  };
 
-console.log("=== UAS IoT Database Status ===");
-console.log(JSON.stringify(diagnostics, null, 2));
+  console.log("=== UAS IoT Database Status ===");
+  console.log(JSON.stringify(diagnostics, null, 2));
 
-if (!diagnostics.databaseExists) {
-  console.error("\nDatabase file belum ada. Jalankan: npm run db:deploy");
-  process.exit(1);
-}
+  if (!diagnostics.databaseExists) {
+    console.error("\nDatabase file belum ada. Jalankan: npm run db:deploy");
+    process.exit(1);
+  }
 
-const db = new Database(diagnostics.resolvedDatabasePath, { readonly: true });
-const tables = db
-  .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
-  .all()
-  .map((row) => row.name);
-const missing = REQUIRED_TABLES.filter((table) => !tables.includes(table));
+  const client = createClient({ url });
 
-console.log("\nTables:", tables.join(", ") || "(kosong)");
+  const tablesResult = await client.execute(
+    "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
+  );
+  const tables = tablesResult.rows.map((row) => String(row.name));
+  const missing = REQUIRED_TABLES.filter((table) => !tables.includes(table));
 
-if (missing.length > 0) {
-  console.error("\nTabel belum ada:", missing.join(", "));
-  console.error("Jalankan di folder proyek:");
-  console.error(`  cd ${diagnostics.projectRoot}`);
-  console.error("  npm run db:deploy");
-  process.exit(1);
-}
+  console.log("\nTables:", tables.join(", ") || "(kosong)");
 
-db.close();
+  if (missing.length > 0) {
+    console.error("\nTabel belum ada:", missing.join(", "));
+    console.error("Jalankan: npm run db:deploy");
+    process.exit(1);
+  }
 
-const dbWrite = new Database(diagnostics.resolvedDatabasePath);
-try {
   const testId = `db-status-${Date.now()}`;
-  dbWrite
-    .prepare("INSERT INTO SubmitAttempt (id, ip) VALUES (?, ?)")
-    .run(testId, "db-status-test");
-  dbWrite.prepare("DELETE FROM SubmitAttempt WHERE id = ?").run(testId);
-  console.log("\nWrite test: OK");
-} catch (error) {
-  console.error(
-    "\nWrite test GAGAL:",
-    error instanceof Error ? error.message : error,
-  );
-  console.error(
-    "\nDatabase bisa dibaca tapi tidak bisa ditulis (PM2 user ≠ owner file).",
-  );
-  console.error("Perbaiki permission (sesuaikan user PM2, biasanya www):");
-  console.error(`  chown -R www:www ${path.dirname(diagnostics.resolvedDatabasePath)}`);
-  console.error(`  chmod 775 ${path.dirname(diagnostics.resolvedDatabasePath)}`);
-  console.error(`  chmod 664 ${diagnostics.resolvedDatabasePath}`);
-  process.exit(1);
-} finally {
-  dbWrite.close();
+  try {
+    await client.execute({
+      sql: "INSERT INTO SubmitAttempt (id, ip) VALUES (?, ?)",
+      args: [testId, "db-status-test"],
+    });
+    await client.execute({
+      sql: "DELETE FROM SubmitAttempt WHERE id = ?",
+      args: [testId],
+    });
+    console.log("\nWrite test: OK");
+  } catch (error) {
+    console.error(
+      "\nWrite test GAGAL:",
+      error instanceof Error ? error.message : error,
+    );
+    console.error("\nPerbaiki permission (sesuaikan user PM2, biasanya www):");
+    console.error(`  chown -R www:www ${path.dirname(dbPath)}`);
+    console.error(`  chmod 775 ${path.dirname(dbPath)}`);
+    console.error(`  chmod 664 ${dbPath}`);
+    process.exit(1);
+  } finally {
+    client.close();
+  }
+
+  console.log("\nOK — database siap.");
 }
 
-console.log("\nOK — database siap.");
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
