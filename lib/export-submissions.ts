@@ -1,4 +1,5 @@
 import { AI_SECTION_LABELS } from "@/lib/labels";
+import { formatDateTime } from "@/lib/format";
 import type { SubmissionPublic } from "@/lib/types";
 
 export const EXPORT_RUBRIC_KEYS = [
@@ -43,6 +44,7 @@ export function buildSubmissionExportRows(submissions: SubmissionPublic[]) {
     "Kelas",
     "Nama Mahasiswa",
     "NPM",
+    "Dikumpulkan",
     ...EXPORT_RUBRIC_KEYS.map((key) => rubricExportLabel(key)),
     "Skor",
   ];
@@ -53,6 +55,7 @@ export function buildSubmissionExportRows(submissions: SubmissionPublic[]) {
       s.kelas,
       s.nama,
       s.npm,
+      formatDateTime(s.createdAt),
       ...EXPORT_RUBRIC_KEYS.map((key) =>
         checklistValue(getRubricPassed(sections as Record<string, { passed: boolean }> | undefined, key)),
       ),

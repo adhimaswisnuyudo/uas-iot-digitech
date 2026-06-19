@@ -14,10 +14,22 @@ function createPrismaClient() {
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+function getPrismaClient(): PrismaClient {
+  const cached = globalForPrisma.prisma;
+  if (cached && "appSetting" in cached) {
+    return cached;
+  }
 
-if (!globalForPrisma.prisma) {
-  console.info(`[db] Using SQLite at ${connectionString}`);
+  const client = createPrismaClient();
+  globalForPrisma.prisma = client;
+
+  if (!cached) {
+    console.info(`[db] Using SQLite at ${connectionString}`);
+  } else {
+    console.info("[db] Prisma client di-refresh (model baru terdeteksi)");
+  }
+
+  return client;
 }
 
-globalForPrisma.prisma = prisma;
+export const prisma = getPrismaClient();

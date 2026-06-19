@@ -1,5 +1,6 @@
 import { DurationBadge, StatusBadge } from "@/components/Badge";
 import { AiAnalysisContent } from "@/components/AiAnalysisContent";
+import { formatDateTime } from "@/lib/format";
 import type { SubmissionPublic } from "@/lib/types";
 
 export function AiAnalysisDetail({
@@ -29,8 +30,7 @@ export function AiAnalysisDetail({
                 NPM {submission.npm} · Kelas {submission.kelas}
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                Dikumpulkan{" "}
-                {new Date(submission.createdAt).toLocaleString("id-ID")}
+                Dikumpulkan {formatDateTime(submission.createdAt)}
               </p>
             </div>
           </div>

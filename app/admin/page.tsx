@@ -8,6 +8,7 @@ import { ApiUsagePanel } from "@/components/ApiUsagePanel";
 import { AnalysisSettingsPanel } from "@/components/AnalysisSettingsPanel";
 import { FilterBar } from "@/components/FilterBar";
 import { downloadSubmissionsExcel } from "@/lib/export-submissions";
+import { formatDateTime } from "@/lib/format";
 import { KELAS_OPTIONS } from "@/lib/constants";
 import type { SubmissionPublic } from "@/lib/types";
 
@@ -291,6 +292,7 @@ export default function AdminPage() {
                         <th className="w-12 px-4 py-3 font-medium">No</th>
                         <th className="px-4 py-3 font-medium">Mahasiswa</th>
                         <th className="px-4 py-3 font-medium">Kelas</th>
+                        <th className="px-4 py-3 font-medium">Dikumpulkan</th>
                         <th className="px-4 py-3 font-medium">Durasi</th>
                         <th className="px-4 py-3 font-medium">AI</th>
                         <th className="px-4 py-3 font-medium">Skor</th>
@@ -308,6 +310,9 @@ export default function AdminPage() {
                             <p className="text-xs text-slate-500">{s.npm}</p>
                           </td>
                           <td className="px-4 py-3">{s.kelas}</td>
+                          <td className="px-4 py-3 text-xs text-slate-600">
+                            {formatDateTime(s.createdAt)}
+                          </td>
                           <td className="px-4 py-3">
                             <DurationBadge
                               duration={s.duration}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DurationBadge } from "@/components/Badge";
 import { AiAnalysisContent } from "@/components/AiAnalysisContent";
 import { Modal } from "@/components/Modal";
+import { formatDateTime } from "@/lib/format";
 import type { SubmissionPublic } from "@/lib/types";
 
 export function VideoCard({ submission }: { submission: SubmissionPublic }) {
@@ -28,6 +29,9 @@ export function VideoCard({ submission }: { submission: SubmissionPublic }) {
             <h3 className="font-semibold text-slate-900">{submission.nama}</h3>
             <p className="text-sm text-slate-500">
               {submission.npm} · {submission.kelas}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-400">
+              Dikumpulkan {formatDateTime(submission.createdAt)}
             </p>
           </div>
 
@@ -78,6 +82,8 @@ export function VideoCard({ submission }: { submission: SubmissionPublic }) {
       >
         <div className="mb-4 text-sm text-slate-500">
           {submission.npm} · {submission.kelas}
+          <span className="mx-1.5">·</span>
+          Dikumpulkan {formatDateTime(submission.createdAt)}
         </div>
         <AiAnalysisContent submission={submission} />
       </Modal>
