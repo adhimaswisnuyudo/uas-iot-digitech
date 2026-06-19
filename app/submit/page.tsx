@@ -36,7 +36,7 @@ export default function SubmitPage() {
               <li>Wajah terlihat jelas, rekaman sendiri</li>
               <li>Tanpa AI avatar atau text-to-speech</li>
               <li>Public atau unlisted</li>
-              <li>5 bagian: perkenalan, IoT, refleksi & feedback dosen, inovasi, penutup</li>
+              <li>4 bagian: perkenalan, refleksi & feedback dosen, inovasi, penutup</li>
             </ul>
             <Link
               href="/ketentuan"

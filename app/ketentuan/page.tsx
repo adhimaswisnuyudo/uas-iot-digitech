@@ -51,9 +51,6 @@ export default function KetentuanPage() {
                   dipelajari selama satu semester.
                 </li>
                 <li>
-                  Menjelaskan konsep-konsep utama IoT dengan bahasa sendiri.
-                </li>
-                <li>
                   Menyampaikan evaluasi terhadap proses pembelajaran.
                 </li>
                 <li>
@@ -100,27 +97,9 @@ export default function KetentuanPage() {
                 <li>NPM</li>
                 <li>Kelas</li>
               </ul>
-              <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-slate-700">
-                <p className="text-xs font-medium uppercase tracking-wide text-blue-800">
-                  Contoh
-                </p>
-                <p className="mt-1 italic">
-                  &ldquo;Perkenalkan, nama saya Adi Nugraha, NPM 23110001, kelas
-                  C123.&rdquo;
-                </p>
-              </div>
             </Section>
 
-            <Section title="Bagian 2 — Pemahaman Internet of Things">
-              <p>Jelaskan secara singkat:</p>
-              <ul className="list-inside list-disc space-y-1 pl-1">
-                <li>Apa itu Internet of Things</li>
-                <li>Komponen utama IoT</li>
-                <li>Cara kerja sistem IoT</li>
-              </ul>
-            </Section>
-
-            <Section title="Bagian 3 — Refleksi Perkuliahan dan Feedback Dosen">
+            <Section title="Bagian 2 — Refleksi Perkuliahan dan Feedback Dosen">
               <p>
                 Mahasiswa wajib menyampaikan pendapat secara jujur, objektif,
                 dan santun mengenai pengalaman mengikuti mata kuliah Internet
@@ -148,10 +127,16 @@ export default function KetentuanPage() {
               </ul>
             </Section>
 
-            <Section title="Bagian 4 — Gagasan Inovasi IoT">
+            <Section title="Bagian 3 — Gagasan Inovasi IoT">
               <p>
                 Mahasiswa wajib menjelaskan satu ide inovasi IoT yang dapat
-                diterapkan di masa depan. Minimal menjelaskan:
+                diterapkan di masa depan.{" "}
+                <strong>
+                  Ide ini tidak boleh menggunakan project tugas besar yang
+                  sedang dikerjakan saat ini
+                </strong>
+                ; semakin inovatif dan orisinal, semakin baik. Minimal
+                menjelaskan:
               </p>
               <ul className="list-inside list-disc space-y-1 pl-1">
                 <li>Nama inovasi</li>
@@ -162,7 +147,7 @@ export default function KetentuanPage() {
               </ul>
             </Section>
 
-            <Section title="Bagian 5 — Penutup">
+            <Section title="Bagian 4 — Penutup">
               <p>
                 Kesimpulan dan harapan terhadap perkembangan IoT di masa
                 mendatang.

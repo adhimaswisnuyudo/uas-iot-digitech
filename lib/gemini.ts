@@ -62,12 +62,11 @@ Ketentuan video:
 - Wajah mahasiswa harus terlihat jelas
 - Bukan AI avatar / text-to-speech
 
-Rubrik 5 bagian (tandai passed true/false + catatan singkat Bahasa Indonesia):
+Rubrik 4 bagian (tandai passed true/false + catatan singkat Bahasa Indonesia):
 1. perkenalan — nama, NPM, kelas disebutkan
-2. pemahaman_iot — apa itu IoT, komponen utama, cara kerja
-3. refleksi_dan_feedback — refleksi perkuliahan (materi menarik/menantang/bermanfaat, praktikum, manfaat) dan feedback dosen (cara mengajar, kejelasan, interaksi, saran)
-4. gagasan_inovasi — nama inovasi, permasalahan, cara kerja, sensor, manfaat
-5. penutup — kesimpulan dan harapan IoT
+2. refleksi_dan_feedback — refleksi perkuliahan (materi menarik/menantang/bermanfaat, praktikum, manfaat) dan feedback dosen (cara mengajar, kejelasan, interaksi, saran)
+3. gagasan_inovasi — ide inovasi IoT orisinal (BUKAN project tugas besar saat ini), nama inovasi, permasalahan, cara kerja, sensor, manfaat; semakin inovatif semakin baik
+4. penutup — kesimpulan dan harapan IoT
 
 Juga deteksi:
 - faceDetected: wajah mahasiswa terlihat
@@ -83,7 +82,6 @@ Jawab HANYA JSON valid dengan struktur:
   "durationValid": boolean | null,
   "sections": {
     "perkenalan": { "passed": boolean, "note": string },
-    "pemahaman_iot": { "passed": boolean, "note": string },
     "refleksi_dan_feedback": { "passed": boolean, "note": string },
     "gagasan_inovasi": { "passed": boolean, "note": string },
     "penutup": { "passed": boolean, "note": string }

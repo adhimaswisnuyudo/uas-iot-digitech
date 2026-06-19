@@ -9,7 +9,6 @@ export interface AiAnalysisResult {
   durationValid?: boolean;
   sections: {
     perkenalan: AiSectionResult;
-    pemahaman_iot: AiSectionResult;
     refleksi_dan_feedback: AiSectionResult;
     gagasan_inovasi: AiSectionResult;
     penutup: AiSectionResult;

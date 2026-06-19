@@ -3,7 +3,6 @@ import type { SubmissionPublic } from "@/lib/types";
 
 export const EXPORT_RUBRIC_KEYS = [
   "perkenalan",
-  "pemahaman_iot",
   "refleksi_dan_feedback",
   "gagasan_inovasi",
   "penutup",

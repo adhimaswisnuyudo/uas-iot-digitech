@@ -9,7 +9,7 @@ Aplikasi web pengumpulan UAS mata kuliah **Internet of Things** untuk **Digitech
 ## Daftar Isi
 
 - [Fitur](#fitur)
-- [Struktur UAS Video (5 Bagian)](#struktur-uas-video-5-bagian)
+- [Struktur UAS Video (4 Bagian)](#struktur-uas-video-4-bagian)
 - [Tech Stack](#tech-stack)
 - [Struktur Project](#struktur-project)
 - [Persyaratan](#persyaratan)
@@ -54,17 +54,16 @@ Aplikasi web pengumpulan UAS mata kuliah **Internet of Things** untuk **Digitech
 
 ---
 
-## Struktur UAS Video (5 Bagian)
+## Struktur UAS Video (4 Bagian)
 
 Durasi video: **minimal 2 menit**, **maksimal 5 menit**.
 
 | Bagian | Isi |
 |--------|-----|
 | 1. Perkenalan Diri | Nama lengkap, NPM, kelas |
-| 2. Pemahaman IoT | Apa itu IoT, komponen utama, cara kerja |
-| 3. Refleksi & Feedback Dosen | Refleksi perkuliahan + praktikum + feedback dosen |
-| 4. Gagasan Inovasi IoT | Nama inovasi, permasalahan, cara kerja, sensor, manfaat |
-| 5. Penutup | Kesimpulan dan harapan IoT |
+| 2. Refleksi & Feedback Dosen | Refleksi perkuliahan + praktikum + feedback dosen |
+| 3. Gagasan Inovasi IoT | Ide inovasi orisinal (bukan project tugas besar saat ini), permasalahan, cara kerja, sensor, manfaat |
+| 4. Penutup | Kesimpulan dan harapan IoT |
 
 Ketentuan umum:
 - Dikerjakan **individu**
@@ -267,7 +266,7 @@ Pipeline analisis (background, non-blocking):
 
 1. Unduh video via **yt-dlp** (resolusi rendah, max 360p)
 2. Upload ke **Gemini Files API**
-3. Prompt rubrik 5 bagian UAS + deteksi wajah
+3. Prompt rubrik 4 bagian UAS + deteksi wajah
 4. Simpan JSON hasil + skor ke database
 
 Output per submission:
