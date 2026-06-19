@@ -267,29 +267,52 @@ function formatQuotaError(error: unknown): Error {
 }
 
 async function downloadVideo(youtubeUrl: string, outputPath: string) {
+  const ytdlp = process.env.YT_DLP_PATH ?? "yt-dlp";
+  const args = [
+    "--no-playlist",
+    "--no-warnings",
+    "--extractor-args",
+    "youtube:player_client=android,web",
+    "-f",
+    "worst[height<=360][ext=mp4]/worst[height<=360]/worst/best[height<=360]",
+    "-o",
+    outputPath,
+    youtubeUrl,
+  ];
+
   try {
-    await execFileAsync(
-      "yt-dlp",
-      [
-        "-f",
-        "worst[height<=360][ext=mp4]/worst[height<=360]/worst",
-        "--no-playlist",
-        "-o",
-        outputPath,
-        youtubeUrl,
-      ],
-      { timeout: 120000 },
-    );
-  } catch {
+    await execFileAsync(ytdlp, args, {
+      timeout: 180000,
+      maxBuffer: 5 * 1024 * 1024,
+    });
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException & {
+      stderr?: string;
+      stdout?: string;
+    };
+
+    const detail = [err.stderr, err.stdout, err.message]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    if (err.code === "ENOENT") {
+      throw new Error(
+        "yt-dlp tidak ditemukan di PATH server. Install yt-dlp atau set YT_DLP_PATH=/usr/local/bin/yt-dlp di .env",
+      );
+    }
+
     throw new Error(
-      "Gagal mengunduh video. Pastikan yt-dlp terinstall di server.",
+      detail
+        ? `Gagal mengunduh video YouTube: ${detail.slice(0, 400)}`
+        : "Gagal mengunduh video. Pastikan yt-dlp terinstall di server.",
     );
   }
 
   try {
     await fs.access(outputPath);
   } catch {
-    throw new Error("File video tidak ditemukan setelah unduhan");
+    throw new Error("File video tidak ditemukan setelah unduhan yt-dlp");
   }
 }
 

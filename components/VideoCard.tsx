@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DurationBadge, StatusBadge } from "@/components/Badge";
+import { DurationBadge } from "@/components/Badge";
 import { AiAnalysisContent } from "@/components/AiAnalysisContent";
 import { Modal } from "@/components/Modal";
 import type { SubmissionPublic } from "@/lib/types";
@@ -9,9 +9,6 @@ import type { SubmissionPublic } from "@/lib/types";
 export function VideoCard({ submission }: { submission: SubmissionPublic }) {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const hasAnalysis = submission.aiResult !== null;
-  const isWaiting =
-    submission.aiStatus === "pending" ||
-    submission.aiStatus === "processing";
 
   return (
     <>
@@ -35,7 +32,6 @@ export function VideoCard({ submission }: { submission: SubmissionPublic }) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {!hasAnalysis && <StatusBadge status={submission.aiStatus} />}
             <DurationBadge
               duration={submission.duration}
               valid={submission.durationValid}
@@ -46,14 +42,6 @@ export function VideoCard({ submission }: { submission: SubmissionPublic }) {
               </span>
             )}
           </div>
-
-          {isWaiting && !hasAnalysis && (
-            <p className="text-xs text-amber-700">
-              {submission.aiStatus === "processing"
-                ? "Analisis AI sedang diproses..."
-                : "Menunggu analisis AI"}
-            </p>
-          )}
 
           {hasAnalysis && (
             <>
@@ -70,10 +58,6 @@ export function VideoCard({ submission }: { submission: SubmissionPublic }) {
                 Lihat Hasil Analisis
               </button>
             </>
-          )}
-
-          {!hasAnalysis && submission.aiError && (
-            <p className="text-xs text-red-600">{submission.aiError}</p>
           )}
 
           <a

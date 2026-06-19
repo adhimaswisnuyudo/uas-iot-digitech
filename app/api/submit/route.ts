@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { KELAS_OPTIONS, AI_STATUS } from "@/lib/constants";
-import { analyzeVideoWithGemini } from "@/lib/gemini";
 import {
   normalizeYoutubeUrl,
   validateYoutubeVideo,
@@ -113,13 +112,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (process.env.GEMINI_API_KEY) {
-      void runAnalysis(submission.id);
-    }
-
     return NextResponse.json(
       {
-        message: "Submission berhasil! Analisis AI akan diproses di background.",
+        message: "Submission berhasil! Video Anda sudah masuk gallery.",
         id: submission.id,
       },
       { status: 201 },
@@ -130,54 +125,5 @@ export async function POST(request: NextRequest) {
       { error: "Terjadi kesalahan saat menyimpan data" },
       { status: 500 },
     );
-  }
-}
-
-async function runAnalysis(id: string) {
-  const submission = await prisma.submission.findUnique({ where: { id } });
-  if (!submission) return;
-
-  await prisma.submission.update({
-    where: { id },
-    data: { aiStatus: AI_STATUS.PROCESSING, aiError: null },
-  });
-
-  try {
-    const result = await analyzeVideoWithGemini(
-      submission.youtubeUrl,
-      {
-        nama: submission.nama,
-        npm: submission.npm,
-        kelas: submission.kelas,
-      },
-      id,
-    );
-
-    const durationFromAi = result.durationSeconds;
-    const durationValid =
-      durationFromAi !== undefined
-        ? durationFromAi >= 120 && durationFromAi <= 300
-        : submission.durationValid;
-
-    await prisma.submission.update({
-      where: { id },
-      data: {
-        aiStatus: AI_STATUS.DONE,
-        aiScore: Math.round(result.overallScore),
-        aiResult: JSON.stringify(result),
-        duration: durationFromAi ?? submission.duration,
-        durationValid,
-      },
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Analisis AI gagal";
-    await prisma.submission.update({
-      where: { id },
-      data: {
-        aiStatus: AI_STATUS.FAILED,
-        aiError: message,
-      },
-    });
   }
 }

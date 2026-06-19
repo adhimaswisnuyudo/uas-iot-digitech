@@ -5,7 +5,7 @@ const STATUS_CONFIG: Record<
   { label: string; className: string }
 > = {
   [AI_STATUS.PENDING]: {
-    label: "Menunggu AI",
+    label: "Belum dianalisis",
     className: "bg-amber-100 text-amber-800 border-amber-200",
   },
   [AI_STATUS.PROCESSING]: {

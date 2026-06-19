@@ -29,7 +29,7 @@ export function AiAnalysisContent({
           <p className="font-medium">
             {submission.aiStatus === "processing"
               ? "Analisis AI sedang diproses..."
-              : "Menunggu analisis AI"}
+              : "Belum dianalisis. Admin dapat memulai analisis dari dashboard."}
           </p>
         </div>
       );

@@ -58,7 +58,7 @@ export default function AdminDetailPage() {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        alert(data.error ?? "Gagal analisis ulang");
+        alert(data.error ?? "Gagal menjalankan analisis AI");
       }
       await fetchSubmission();
     } finally {
@@ -124,10 +124,18 @@ export default function AdminDetailPage() {
                 <button
                   type="button"
                   onClick={reanalyze}
-                  disabled={reanalyzing || deleting}
+                  disabled={
+                    reanalyzing ||
+                    deleting ||
+                    submission.aiStatus === "processing"
+                  }
                   className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
                 >
-                  {reanalyzing ? "Memproses..." : "Analisis ulang"}
+                  {reanalyzing
+                    ? "Memproses..."
+                    : submission.aiStatus === "done"
+                      ? "Analisis ulang"
+                      : "Analisis AI"}
                 </button>
                 <button
                   type="button"

@@ -26,6 +26,13 @@ export async function POST(
     );
   }
 
+  if (submission.aiStatus === AI_STATUS.PROCESSING) {
+    return NextResponse.json(
+      { error: "Analisis sedang berjalan" },
+      { status: 409 },
+    );
+  }
+
   await prisma.submission.update({
     where: { id },
     data: { aiStatus: AI_STATUS.PROCESSING, aiError: null },

@@ -78,12 +78,18 @@ export default function AdminPage() {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        alert(data.error ?? "Gagal analisis ulang");
+        alert(data.error ?? "Gagal menjalankan analisis AI");
       }
       await fetchSubmissions();
     } finally {
       setReanalyzing(null);
     }
+  }
+
+  function analyzeButtonLabel(status: string, id: string) {
+    if (reanalyzing === id) return "Memproses...";
+    if (status === "done") return "Analisis ulang";
+    return "Analisis AI";
   }
 
   async function deleteSubmission(id: string, nama: string) {
@@ -311,12 +317,13 @@ export default function AdminPage() {
                               <button
                                 type="button"
                                 onClick={() => reanalyze(s.id)}
-                                disabled={reanalyzing === s.id}
+                                disabled={
+                                  reanalyzing === s.id ||
+                                  s.aiStatus === "processing"
+                                }
                                 className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50"
                               >
-                                {reanalyzing === s.id
-                                  ? "Memproses..."
-                                  : "Analisis ulang"}
+                                {analyzeButtonLabel(s.aiStatus, s.id)}
                               </button>
                               <button
                                 type="button"
