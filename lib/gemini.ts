@@ -102,6 +102,33 @@ export async function analyzeVideoWithGemini(
     throw new Error("GEMINI_API_KEY belum dikonfigurasi");
   }
 
+  const prompt = buildPrompt(meta.nama, meta.npm, meta.kelas);
+  const preferYtDlp = process.env.GEMINI_USE_YT_DLP === "true";
+
+  if (!preferYtDlp) {
+    try {
+      return await analyzeWithContent(
+        apiKey,
+        [
+          {
+            fileData: {
+              mimeType: "video/mp4",
+              fileUri: youtubeUrl,
+            },
+          },
+          { text: prompt },
+        ],
+        submissionId,
+      );
+    } catch (error) {
+      if (isQuotaError(error)) throw error;
+      console.warn(
+        "[Gemini] Analisis via URL YouTube langsung gagal, fallback yt-dlp:",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "uas-iot-"));
   const tempVideo = path.join(tempDir, "video.mp4");
 
@@ -124,87 +151,104 @@ export async function analyzeVideoWithGemini(
       throw new Error("Gemini gagal memproses file video");
     }
 
-    const content = [
-      {
-        fileData: {
-          mimeType: upload.file.mimeType,
-          fileUri: upload.file.uri,
+    return await analyzeWithContent(
+      apiKey,
+      [
+        {
+          fileData: {
+            mimeType: upload.file.mimeType,
+            fileUri: upload.file.uri,
+          },
         },
-      },
-      { text: buildPrompt(meta.nama, meta.npm, meta.kelas) },
-    ];
-
-    const models = getModelCandidates();
-    let lastError: unknown;
-
-    for (const modelName of models) {
-      try {
-        const { text, usage, model } = await generateContentWithRetry(
-          apiKey,
-          modelName,
-          content,
-        );
-        const parsed = JSON.parse(text) as AiAnalysisResult;
-
-        await logApiUsage({
-          service: "gemini",
-          operation: "analyze_video",
-          model,
-          promptTokens: usage?.promptTokenCount,
-          outputTokens: usage?.candidatesTokenCount,
-          totalTokens: usage?.totalTokenCount,
-          success: true,
-          submissionId,
-        });
-
+        { text: prompt },
+      ],
+      submissionId,
+      async () => {
         try {
           await fileManager.deleteFile(upload.file.name);
         } catch {
           // ignore cleanup errors
         }
+      },
+    );
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
 
-        return parsed;
-      } catch (error) {
-        lastError = error;
-        if (isQuotaError(error)) {
-          await logApiUsage({
-            service: "gemini",
-            operation: "analyze_video",
-            model: modelName,
-            success: false,
-            errorMessage:
-              error instanceof Error ? error.message.slice(0, 500) : "Quota exceeded",
-            submissionId,
-          });
-          console.warn(`[Gemini] Kuota habis untuk model ${modelName}, coba model lain...`);
-          continue;
-        }
+type GeminiContent = Parameters<
+  ReturnType<GoogleGenerativeAI["getGenerativeModel"]>["generateContent"]
+>[0];
+
+async function analyzeWithContent(
+  apiKey: string,
+  content: GeminiContent,
+  submissionId?: string,
+  onSuccess?: () => Promise<void>,
+): Promise<AiAnalysisResult> {
+  const models = getModelCandidates();
+  let lastError: unknown;
+
+  for (const modelName of models) {
+    try {
+      const { text, usage, model } = await generateContentWithRetry(
+        apiKey,
+        modelName,
+        content,
+      );
+      const parsed = JSON.parse(text) as AiAnalysisResult;
+
+      await logApiUsage({
+        service: "gemini",
+        operation: "analyze_video",
+        model,
+        promptTokens: usage?.promptTokenCount,
+        outputTokens: usage?.candidatesTokenCount,
+        totalTokens: usage?.totalTokenCount,
+        success: true,
+        submissionId,
+      });
+
+      await onSuccess?.();
+      return parsed;
+    } catch (error) {
+      lastError = error;
+      if (isQuotaError(error)) {
         await logApiUsage({
           service: "gemini",
           operation: "analyze_video",
           model: modelName,
           success: false,
           errorMessage:
-            error instanceof Error ? error.message.slice(0, 500) : "Analisis gagal",
+            error instanceof Error ? error.message.slice(0, 500) : "Quota exceeded",
           submissionId,
         });
-        throw error;
+        console.warn(`[Gemini] Kuota habis untuk model ${modelName}, coba model lain...`);
+        continue;
       }
+      await logApiUsage({
+        service: "gemini",
+        operation: "analyze_video",
+        model: modelName,
+        success: false,
+        errorMessage:
+          error instanceof Error ? error.message.slice(0, 500) : "Analisis gagal",
+        submissionId,
+      });
+      throw error;
     }
-
-    const quotaError = formatQuotaError(lastError);
-    await logApiUsage({
-      service: "gemini",
-      operation: "analyze_video",
-      model: models[models.length - 1],
-      success: false,
-      errorMessage: quotaError.message.slice(0, 500),
-      submissionId,
-    });
-    throw quotaError;
-  } finally {
-    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
+
+  const quotaError = formatQuotaError(lastError);
+  await logApiUsage({
+    service: "gemini",
+    operation: "analyze_video",
+    model: models[models.length - 1],
+    success: false,
+    errorMessage: quotaError.message.slice(0, 500),
+    submissionId,
+  });
+  throw quotaError;
 }
 
 async function generateContentWithRetry(
@@ -264,54 +308,101 @@ function formatQuotaError(error: unknown): Error {
   );
 }
 
+const YOUTUBE_PLAYER_CLIENTS = [
+  "android_vr,web",
+  "mweb,web",
+  "tv_embedded,web",
+  "ios,web",
+  "android,web",
+];
+
+function getYtDlpCookieArgs(): string[] {
+  const cookiesPath = process.env.YT_DLP_COOKIES_PATH?.trim();
+  if (cookiesPath) {
+    return ["--cookies", cookiesPath];
+  }
+
+  const fromBrowser = process.env.YT_DLP_COOKIES_FROM_BROWSER?.trim();
+  if (fromBrowser) {
+    return ["--cookies-from-browser", fromBrowser];
+  }
+
+  return [];
+}
+
+function isYoutubeBotBlockError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("sign in to confirm") ||
+    lower.includes("not a bot") ||
+    lower.includes("cookies-from-browser") ||
+    lower.includes("confirm you're not a bot")
+  );
+}
+
 async function downloadVideo(youtubeUrl: string, outputPath: string) {
   const ytdlp = process.env.YT_DLP_PATH ?? "yt-dlp";
-  const args = [
-    "--no-playlist",
-    "--no-warnings",
-    "--extractor-args",
-    "youtube:player_client=android,web",
-    "-f",
-    "worst[height<=360][ext=mp4]/worst[height<=360]/worst/best[height<=360]",
-    "-o",
-    outputPath,
-    youtubeUrl,
-  ];
+  const cookieArgs = getYtDlpCookieArgs();
+  const errors: string[] = [];
 
-  try {
-    await execFileAsync(ytdlp, args, {
-      timeout: 180000,
-      maxBuffer: 5 * 1024 * 1024,
-    });
-  } catch (error) {
-    const err = error as NodeJS.ErrnoException & {
-      stderr?: string;
-      stdout?: string;
-    };
+  for (const clients of YOUTUBE_PLAYER_CLIENTS) {
+    const args = [
+      "--no-playlist",
+      "--no-warnings",
+      ...cookieArgs,
+      "--extractor-args",
+      `youtube:player_client=${clients}`,
+      "-f",
+      "worst[height<=360][ext=mp4]/worst[height<=360]/worst/best[height<=360]",
+      "-o",
+      outputPath,
+      youtubeUrl,
+    ];
 
-    const detail = [err.stderr, err.stdout, err.message]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
+    try {
+      await execFileAsync(ytdlp, args, {
+        timeout: 180000,
+        maxBuffer: 5 * 1024 * 1024,
+      });
+      await fs.access(outputPath);
+      return;
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException & {
+        stderr?: string;
+        stdout?: string;
+      };
 
-    if (err.code === "ENOENT") {
-      throw new Error(
-        "yt-dlp tidak ditemukan di PATH server. Install yt-dlp atau set YT_DLP_PATH=/usr/local/bin/yt-dlp di .env",
-      );
+      if (err.code === "ENOENT") {
+        throw new Error(
+          "yt-dlp tidak ditemukan di PATH server. Install yt-dlp atau set YT_DLP_PATH=/usr/local/bin/yt-dlp di .env",
+        );
+      }
+
+      const detail = [err.stderr, err.stdout, err.message]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      errors.push(detail || "Unduhan gagal tanpa detail");
+
+      await fs.rm(outputPath, { force: true }).catch(() => {});
     }
+  }
 
+  const lastError = errors[errors.length - 1] ?? "Unduhan gagal";
+  if (isYoutubeBotBlockError(lastError)) {
     throw new Error(
-      detail
-        ? `Gagal mengunduh video YouTube: ${detail.slice(0, 400)}`
-        : "Gagal mengunduh video. Pastikan yt-dlp terinstall di server.",
+      "Gagal mengunduh video YouTube: YouTube memblokir IP server (bot check). " +
+        "Secara default aplikasi sekarang menganalisis via URL YouTube langsung ke Gemini; " +
+        "deploy ulang jika server masih memakai versi lama. " +
+        "Jika fallback yt-dlp tetap diperlukan, set YT_DLP_COOKIES_PATH ke file cookies.txt " +
+        "(export dari browser yang login YouTube). " +
+        "Panduan: https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies",
     );
   }
 
-  try {
-    await fs.access(outputPath);
-  } catch {
-    throw new Error("File video tidak ditemukan setelah unduhan yt-dlp");
-  }
+  throw new Error(
+    `Gagal mengunduh video YouTube: ${lastError.slice(0, 400)}`,
+  );
 }
 
 export function parseAiResult(json: string | null): AiAnalysisResult | null {

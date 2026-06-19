@@ -192,6 +192,9 @@ Admin: [http://localhost:3000/admin](http://localhost:3000/admin)
 | `GEMINI_MODEL` | Tidak | `gemini-2.5-flash` | Model utama analisis video |
 | `GEMINI_MODEL_FALLBACKS` | Tidak | `gemini-2.0-flash-lite,gemini-1.5-flash` | Fallback jika model utama kena quota (pisahkan koma) |
 | `YOUTUBE_API_KEY` | Tidak | — | YouTube Data API v3 — [Google Cloud Console](https://console.cloud.google.com/) |
+| `YT_DLP_COOKIES_PATH` | Tidak | — | Path ke `cookies.txt` untuk fallback unduhan yt-dlp (jika URL langsung gagal) |
+| `YT_DLP_COOKIES_FROM_BROWSER` | Tidak | — | Ambil cookies dari browser lokal, mis. `chrome` (development) |
+| `GEMINI_USE_YT_DLP` | Tidak | `false` | Paksa analisis via unduhan yt-dlp, bukan URL YouTube langsung |
 | `ANTIBOT_SECRET` | Tidak | `ADMIN_PASSWORD` | Secret HMAC token form submit |
 | `NEXT_PUBLIC_APP_URL` | Tidak | — | URL publik aplikasi (production) |
 
@@ -264,8 +267,8 @@ flowchart LR
 
 Pipeline analisis (background, non-blocking):
 
-1. Unduh video via **yt-dlp** (resolusi rendah, max 360p)
-2. Upload ke **Gemini Files API**
+1. **Utama:** kirim URL YouTube langsung ke Gemini (tanpa unduhan, menghindari bot check)
+2. **Fallback:** unduh via **yt-dlp** (resolusi rendah, max 360p) lalu upload ke Gemini File API
 3. Prompt rubrik 4 bagian UAS + deteksi wajah
 4. Simpan JSON hasil + skor ke database
 
@@ -421,11 +424,15 @@ pm2 restart uas-iot
 
 ## Troubleshooting
 
-### Analisis AI gagal — "Gagal mengunduh video"
+### Analisis AI gagal — "Gagal mengunduh video" / bot check YouTube
 
-- Pastikan **yt-dlp** terinstall dan ada di PATH
+- **Deploy versi terbaru** — analisis sekarang memakai URL YouTube langsung ke Gemini (tanpa yt-dlp)
+- Jika fallback yt-dlp tetap dipakai dan kena *"Sign in to confirm you're not a bot"*:
+  - Export cookies YouTube dari browser → simpan sebagai `cookies.txt` di server
+  - Set `YT_DLP_COOKIES_PATH=/path/ke/cookies.txt` di `.env`
+  - [Panduan export cookies yt-dlp](https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies)
+- Pastikan **yt-dlp** terinstall dan versi terbaru: `yt-dlp -U`
 - Cek video YouTube bisa diakses (public/unlisted)
-- Jalankan manual: `yt-dlp -f worst "URL_YOUTUBE"`
 
 ### Error 429 Gemini (quota exceeded)
 
