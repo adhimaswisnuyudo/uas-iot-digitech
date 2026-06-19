@@ -7,6 +7,7 @@ import {
 } from "@/lib/youtube";
 import { logApiUsage } from "@/lib/usage";
 import { validateAntibot } from "@/lib/antibot";
+import { getSubmitErrorMessage } from "@/lib/submit-errors";
 
 export async function POST(request: NextRequest) {
   try {
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Submit error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan saat menyimpan data" },
+      { error: getSubmitErrorMessage(error) },
       { status: 500 },
     );
   }
