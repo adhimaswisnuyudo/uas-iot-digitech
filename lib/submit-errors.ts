@@ -1,3 +1,8 @@
+import {
+  getDatabaseDiagnostics,
+  getSqliteFilePath,
+} from "@/lib/database-url";
+
 export function getSubmitErrorMessage(error: unknown): string {
   const message =
     error instanceof Error
@@ -7,13 +12,15 @@ export function getSubmitErrorMessage(error: unknown): string {
         : "";
 
   const combined = message.toLowerCase();
+  const dbPath = getSqliteFilePath();
+  const diagnostics = getDatabaseDiagnostics();
 
   if (
     combined.includes("no such table") ||
     combined.includes("submitattempt") ||
     combined.includes("apiusagelog")
   ) {
-    return "Database belum siap. Admin server: jalankan npm run db:deploy.";
+    return `Database belum siap di ${dbPath}. Admin: cd ${diagnostics.projectRoot} && npm run db:deploy && npm run db:status`;
   }
 
   if (
